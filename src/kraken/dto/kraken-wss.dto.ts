@@ -40,3 +40,11 @@ export type KrakenServerResponse =
   | KrakenCurrencyError
   | CurrencyExchange
   | HeartBeatResponse;
+
+export type KrakenClientRequest = {
+  event: 'subscribe' | 'unsubscribe' | 'ping';
+  pair?: CurrencyPair[];
+  subscription?: {
+    name: SubscribeName;
+  };
+};

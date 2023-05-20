@@ -1,95 +1,102 @@
 import { Injectable } from '@nestjs/common';
-import { WebSocket } from 'ws';
-import { translateResponse, timeoutWhileCondition } from '../common/utils/Util';
+import { translateResponse } from '../common/utils/Util';
 import { CurrencyPair } from 'src/common/model/app-service.model';
 import { CurrencySubscribers } from 'src/common/model/kraken-service.model';
-import { KrakenServerResponse } from './dto/kraken-wss.dto';
+import {
+  KrakenClientRequest,
+  KrakenServerResponse,
+} from './dto/kraken-wss.dto';
+import KrakenClientService from './interfaces/KrakenClientService';
+import KrakenWSC from './kraken.wsc';
+import { RawData } from 'ws';
+import { Observer } from '../common/utils/Util';
 
 @Injectable()
-export class KrakenService {
-  private baseUrl = 'wss://ws.kraken.com'; // Replace with the appropriate URL
-
-  private ws: WebSocket;
-  private isConnected = false;
+export class KrakenService implements KrakenClientService {
+  public apiUrl = 'wss://ws.kraken.com';
+  private socket: KrakenWSC;
 
   private currencyTickerSubscribers: CurrencySubscribers = {};
+
+  public aliveTicker: NodeJS.Timer | null;
 
   constructor() {
     this.connect();
   }
 
-  private async connect() {
-    this.ws = new WebSocket(this.baseUrl);
+  public async connect() {
+    this.socket = new KrakenWSC(this.apiUrl);
 
-    this.ws.on('open', async () => {
-      console.log('Connected to Kraken WebSockets API');
-      this.isConnected = true;
-      // await this.subscribeToChannel('ticker');
-    });
+    this.socket.onOpen = () => {
+      this.keepAliveConnection();
+    };
 
-    this.ws.on('message', (data) => {
-      const translatedData: KrakenServerResponse = translateResponse(data);
-      if (Array.isArray(translatedData)) {
-        const [channelId, exchangeDescription, subscribeName, currencyPair] =
-          translatedData;
-        this.currencyTickerSubscribers[currencyPair] = {
-          channelId: channelId,
-          rate: exchangeDescription.c[0],
-        };
-        console.log(`pair ${currencyPair} updated`);
-      } else {
-        if (translatedData?.event === 'heartbeat') return;
-        if (translatedData.status === 'error') {
-          console.log('ERROR:', translatedData);
-        }
-      }
-    });
+    this.socket.onMessage = this.handleSocketResponses.bind(this);
 
-    this.ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
-      console.log('Reconnecting...');
+    this.socket.onError = (_error?: Error) => {
+      this.clearTicker();
       this.connect();
-    });
+    };
 
-    this.ws.on('close', () => {
-      console.log('Connection closed. Reconnecting...');
-      this.isConnected = false;
+    this.socket.onClose = () => {
+      this.clearTicker();
       this.connect();
-    });
+    };
   }
 
-  private sendRequest(request: any) {
-    return new Promise<void>((resolve, reject) => {
-      if (!this.isConnected) reject('Not connected to Kraken WebSockets API');
-      else {
-        this.ws.send(JSON.stringify(request), (error) => {
-          if (error) reject(`Error sending request: ${error.message}`);
-          else resolve();
-        });
-      }
-    });
-  }
-
-  public async getCurrenciesExchange(pairs: CurrencyPair[]) {
-    const result: CurrencySubscribers[] = [];
-    for (const pair of pairs) {
-      const savedTicker = this.currencyTickerSubscribers[pair];
-      if (savedTicker) {
-        result.push(savedTicker);
-      } else {
-        await this.subscribeCurrencyTicker(pairs);
-        await timeoutWhileCondition(
-          () => this.currencyTickerSubscribers[pair] !== undefined,
-          5000,
-          false,
-        );
-        result.push(this.currencyTickerSubscribers[pair]);
+  private handleSocketResponses(response: RawData) {
+    const translatedData: KrakenServerResponse = translateResponse(response);
+    if (Array.isArray(translatedData)) {
+      const [channelId, exchangeDescription, _subscribeName, currencyPair] =
+        translatedData;
+      this.currencyTickerSubscribers[currencyPair] = {
+        channelId: channelId,
+        exchangePair: currencyPair,
+        rate: exchangeDescription.c[0],
+      };
+      Observer.listenAll();
+    } else {
+      if (translatedData?.event === 'heartbeat') return;
+      if (translatedData.status === 'error') {
+        console.log('ERROR:', translatedData);
       }
     }
-    return result;
   }
 
-  private async subscribeCurrencyTicker(currencyPairs: CurrencyPair[]) {
+  public getCurrenciesExchange(pairs: CurrencyPair[]) {
+    return new Promise<CurrencySubscribers[]>((resolve) => {
+      const result: CurrencySubscribers[] = [];
+      const unkown_pairs = [];
+
+      for (const pair of pairs) {
+        const current_pair = this.currencyTickerSubscribers[pair];
+        if (current_pair) result.push(current_pair);
+        else unkown_pairs.push(pair);
+      }
+
+      if (unkown_pairs.length === 0) resolve(result);
+      else {
+        const handler_fun = () => {
+          const _unkown_pairs = unkown_pairs.filter((pair) => {
+            const _pair = this.currencyTickerSubscribers[pair];
+            if (_pair) result.push(_pair);
+            else return !_pair;
+          });
+          if (_unkown_pairs.length) return;
+          else {
+            Observer.unsubscribe(handler_fun);
+            resolve(result);
+          }
+        };
+
+        this.subscribeCurrencyTicker(unkown_pairs).then(() =>
+          Observer.subscribe(handler_fun),
+        );
+      }
+    });
+  }
+
+  public async subscribeCurrencyTicker(currencyPairs: CurrencyPair[]) {
     const request = {
       event: 'subscribe',
       pair: currencyPairs,
@@ -98,7 +105,7 @@ export class KrakenService {
       },
     };
 
-    return this.sendRequest(request);
+    return this.socket.sendRequest(request as KrakenClientRequest);
   }
 
   public async unsubscribeFromChannel(channelName: string) {
@@ -109,6 +116,24 @@ export class KrakenService {
       },
     };
 
-    return this.sendRequest(request);
+    return this.socket.sendRequest(request as KrakenClientRequest);
+  }
+
+  private async pingServer() {
+    const request = {
+      event: 'ping',
+    };
+
+    return this.socket.sendRequest(request as KrakenClientRequest);
+  }
+
+  private keepAliveConnection() {
+    this.aliveTicker = setInterval(async () => {
+      await this.pingServer();
+    }, 5000);
+  }
+
+  private clearTicker() {
+    this.aliveTicker = null;
   }
 }

@@ -1,4 +1,11 @@
-import { Controller, Get, Body, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Body,
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import { KrakenService } from '../kraken/kraken.service';
 import { GetPricesExchangeDto, PricesResponseExchangeDto } from './dto/app.dto';
@@ -14,11 +21,19 @@ export class AppController {
   async getPrices(
     @Body() req: GetPricesExchangeDto,
   ): Promise<PricesResponseExchangeDto> {
-    console.log(req);
     if (typeof req !== 'object' || !req.pairs) throw new BadRequestException();
-
-    const rates = await this.krakenService.getCurrenciesExchange(req.pairs);
-
-    return { rates };
+    try {
+      const rates = await this.krakenService.getCurrenciesExchange(req.pairs);
+      return { rates };
+    } catch (err: unknown) {
+      console.log('SERVER_ERROR:', err);
+      throw new HttpException(
+        'Server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        {
+          cause: err as Error,
+        },
+      );
+    }
   }
 }
