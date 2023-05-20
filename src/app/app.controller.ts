@@ -9,6 +9,7 @@ import {
 import { AppService } from './app.service';
 import { KrakenService } from '../kraken/kraken.service';
 import { GetPricesExchangeDto, PricesResponseExchangeDto } from './dto/app.dto';
+import SetRequestTimeout from '../common/interceptions/timeout.interception';
 
 @Controller()
 export class AppController {
@@ -18,6 +19,7 @@ export class AppController {
   ) {}
 
   @Get('prices')
+  @SetRequestTimeout(5000)
   async getPrices(
     @Body() req: GetPricesExchangeDto,
   ): Promise<PricesResponseExchangeDto> {

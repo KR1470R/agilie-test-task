@@ -15,6 +15,7 @@ import { Observer } from '../common/utils/Util';
 export class KrakenService implements KrakenClientService {
   public apiUrl = 'wss://ws.kraken.com';
   private socket: KrakenWSC;
+  private readonly TIMEOUT = 10000;
 
   private currencyTickerSubscribers: CurrencySubscribers = {};
 
@@ -45,7 +46,7 @@ export class KrakenService implements KrakenClientService {
   }
 
   private handleSocketResponses(response: RawData) {
-    const translatedData: KrakenServerResponse = translateResponse(response);
+    const translatedData = translateResponse(response) as KrakenServerResponse;
     if (Array.isArray(translatedData)) {
       const [channelId, exchangeDescription, _subscribeName, currencyPair] =
         translatedData;

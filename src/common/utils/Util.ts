@@ -1,6 +1,8 @@
 import { RawData } from 'ws';
 
-export function translateResponse(message: Buffer | RawData): any {
+export function translateResponse(
+  message: Buffer | RawData,
+): RawData | object | never {
   try {
     const translated = JSON.parse(message.toString());
     if (typeof translated === 'object' && translated !== null)

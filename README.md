@@ -26,11 +26,11 @@ account in the reference currency according to the latest exchange rate.
 <hr>
 
 ### TODO
- - [ ] Implement 1 task
+ - [x] Implement 1 task
 	 - [x] init project.
 	 - [x] implement clever and clear project architecture
 	 - [x] create appropriate endpoint for currency exchanging.
-	 - [ ] add timeout for /prices endpoint.
+	 - [x] add timeout for /prices endpoint.
  - [ ] Implement 2 task.
 	 - [ ] connect PrismaORM PostgreSQL datebase.
 	 - [ ] add all necessary interfaces and entities.
