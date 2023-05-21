@@ -26,6 +26,13 @@ day at 00:00 the system should calculate and store the balance of each specific
 account in the reference currency according to the latest exchange rate.
 <hr>
 
+### Requirements
+<div>
+	<img alt="" src="https://badgen.net/badge/Docker/any/blue">
+	<img alt="" src="https://badgen.net/badge/node/>=16/green">
+	<img alt="" src="https://badgen.net/badge/npm/>=9/red">
+</div>
+
 ### TODO
  - [x] Implement 1 task
 	 - [x] init project.
