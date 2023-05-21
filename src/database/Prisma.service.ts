@@ -15,7 +15,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
   }
 
   public async createUser(currencyRate: UserBalanceDto) {
-    await this.user.create({
+    return this.user.create({
       data: {
         pair: currencyRate.exchangePair,
         rate: currencyRate.rate,
@@ -30,6 +30,18 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
   }
 
   public async deleteAllUsers() {
-    await this.user.deleteMany();
+    return this.user.deleteMany();
+  }
+
+  public async updateUserById(id: number, userInfo: UserBalanceDto) {
+    return this.user.update({
+      where: { id },
+      data: {
+        pair: userInfo.exchangePair,
+        rate: userInfo.rate,
+        balanceCrypto: userInfo.balanceCrypto,
+        balanceFiat: userInfo.balanceFiat,
+      },
+    });
   }
 }
