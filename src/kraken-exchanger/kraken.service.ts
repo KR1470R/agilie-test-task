@@ -9,7 +9,7 @@ import {
   KrakenClientRequest,
   KrakenServerResponseDto,
 } from './dto/kraken-wss.dto';
-import IKrakenService from './interfaces/IKrakenService';
+import IKrakenService from './interfaces/kraken-service.interface';
 import KrakenWSC from './kraken.wsc';
 import { RawData } from 'ws';
 import { Observer } from '../common/utils/Util';

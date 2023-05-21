@@ -4,9 +4,10 @@ import { PrismaService } from '../database/Prisma.service';
 import { KrakenService } from 'src/kraken-exchanger/kraken.service';
 import { CurrencyPair } from 'src/common/model/app-service.model';
 import { CurrencyInfo } from 'src/common/model/kraken-service.model';
+import IAppService from './interfaces/app-service.interface';
 
 @Injectable()
-export class AppService {
+export class AppService implements IAppService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly krakenService: KrakenService,

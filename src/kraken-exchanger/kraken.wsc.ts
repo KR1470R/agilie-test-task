@@ -1,5 +1,5 @@
 import { WebSocket, RawData } from 'ws';
-import IKrakenSocket from './interfaces/IKrakenSocket';
+import IKrakenSocket from './interfaces/kraken-socket.interface';
 import { KrakenClientRequest } from './dto/kraken-wss.dto';
 
 export default class KrakenWSC implements IKrakenSocket {
@@ -14,6 +14,7 @@ export default class KrakenWSC implements IKrakenSocket {
 
   constructor(private baseUrl: string) {
     this.ws.on('open', () => {
+      console.log('Connection with socket stabilished.');
       this.isConnected = true;
       this.onOpen();
     });

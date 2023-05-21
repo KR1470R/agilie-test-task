@@ -1,14 +1,18 @@
 import { Injectable, OnModuleInit, INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { UserBalanceDto } from './dto/user.dto';
+import IPrismaService from './interfaces/prisma-service.interface';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit {
-  async onModuleInit() {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, IPrismaService
+{
+  public async onModuleInit() {
     await this.$connect();
   }
 
-  async enableShutdownHooks(app: INestApplication) {
+  public async enableShutdownHooks(app: INestApplication) {
     this.$on('beforeExit', async () => {
       await app.close();
     });

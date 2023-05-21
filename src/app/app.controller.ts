@@ -1,14 +1,12 @@
 import {
   Controller,
   Get,
-  Body,
   BadRequestException,
   HttpException,
   HttpStatus,
   Query,
   Post,
   HttpCode,
-  NotFoundException,
 } from '@nestjs/common';
 import { KrakenService } from '../kraken-exchanger/kraken.service';
 import { PrismaService } from '../database/Prisma.service';
@@ -18,9 +16,10 @@ import { REQUEST_TIMEOUT } from '../common/utils/Config';
 import { CurrencyPairsQuery } from './dto/app.dto';
 import { checkValidationOfPairs } from '../common/utils/Util';
 import { CurrencyPair } from '../common/model/app-service.model';
+import IAppController from './interfaces/app-controller.interface';
 
 @Controller()
-export class AppController {
+export class AppController implements IAppController {
   constructor(
     private readonly krakenService: KrakenService,
     private readonly prismaService: PrismaService,
@@ -29,7 +28,7 @@ export class AppController {
   @Get('prices')
   @SetRequestTimeout(REQUEST_TIMEOUT)
   @HttpCode(HttpStatus.OK)
-  async getPrices(
+  public async getPrices(
     @Query('pairs') pairs?: CurrencyPairsQuery,
   ): Promise<PricesResponseExchangeDto> {
     try {
@@ -53,7 +52,7 @@ export class AppController {
 
   @Post('accounts')
   @HttpCode(HttpStatus.CREATED)
-  async postAccounts(
+  public async postAccounts(
     @Query('pair') pair: CurrencyPair,
     @Query('balanceCrypto') balanceCrypto: string,
   ) {
@@ -87,7 +86,7 @@ export class AppController {
 
   @Get('accounts')
   @HttpCode(HttpStatus.FOUND)
-  async getAccounts() {
+  public async getAccounts() {
     try {
       const users = await this.prismaService.getAllUsers();
       return {
@@ -107,7 +106,7 @@ export class AppController {
 
   @Post('delete-accounts')
   @HttpCode(HttpStatus.OK)
-  async deleteAccounts() {
+  public async deleteAccounts() {
     try {
       await this.prismaService.deleteAllUsers();
     } catch (error: unknown) {
