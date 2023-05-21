@@ -1,7 +1,7 @@
 import { WebSocket, RawData } from 'ws';
 import { KrakenClientRequest } from '../dto/kraken-wss.dto';
 
-export default interface KrakenSocketClient {
+export default interface IKrakenSocket {
   ws: WebSocket;
   sendRequest: (request: KrakenClientRequest) => Promise<void>;
   onOpen: () => void;

@@ -14,14 +14,14 @@ type ExchangeDescription = {
   o: [string, string];
 };
 
-export type CurrencyExchange = [
+export type CurrencyExchangeDto = [
   number,
   ExchangeDescription,
   SubscribeName,
   CurrencyPair,
 ];
 
-export type KrakenCurrencyError = {
+export type KrakenCurrencyErrorDto = {
   errorMessage: string;
   event: string;
   status: string;
@@ -31,15 +31,15 @@ export type KrakenCurrencyError = {
   };
 };
 
-export type HeartBeatResponse = {
+export type HeartBeatResponseDto = {
   event: 'heartbeat';
   status?: unknown;
 };
 
-export type KrakenServerResponse =
-  | KrakenCurrencyError
-  | CurrencyExchange
-  | HeartBeatResponse;
+export type KrakenServerResponseDto =
+  | KrakenCurrencyErrorDto
+  | CurrencyExchangeDto
+  | HeartBeatResponseDto;
 
 export type KrakenClientRequest = {
   event: 'subscribe' | 'unsubscribe' | 'ping';

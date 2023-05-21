@@ -4,18 +4,17 @@ import { CurrencyPair } from 'src/common/model/app-service.model';
 import { CurrencySubscribers } from 'src/common/model/kraken-service.model';
 import {
   KrakenClientRequest,
-  KrakenServerResponse,
+  KrakenServerResponseDto,
 } from './dto/kraken-wss.dto';
-import KrakenClientService from './interfaces/KrakenClientService';
+import IKrakenService from './interfaces/IKrakenService';
 import KrakenWSC from './kraken.wsc';
 import { RawData } from 'ws';
 import { Observer } from '../common/utils/Util';
 
 @Injectable()
-export class KrakenService implements KrakenClientService {
+export class KrakenService implements IKrakenService {
   public apiUrl = 'wss://ws.kraken.com';
   private socket: KrakenWSC;
-  private readonly TIMEOUT = 10000;
 
   private currencyTickerSubscribers: CurrencySubscribers = {};
 
@@ -30,6 +29,7 @@ export class KrakenService implements KrakenClientService {
 
     this.socket.onOpen = () => {
       this.keepAliveConnection();
+      Observer.listenAll();
     };
 
     this.socket.onMessage = this.handleSocketResponses.bind(this);
@@ -46,15 +46,20 @@ export class KrakenService implements KrakenClientService {
   }
 
   private handleSocketResponses(response: RawData) {
-    const translatedData = translateResponse(response) as KrakenServerResponse;
+    const translatedData = translateResponse(
+      response,
+    ) as KrakenServerResponseDto;
+
     if (Array.isArray(translatedData)) {
       const [channelId, exchangeDescription, _subscribeName, currencyPair] =
         translatedData;
+
       this.currencyTickerSubscribers[currencyPair] = {
         channelId: channelId,
         exchangePair: currencyPair,
         rate: exchangeDescription.c[0],
       };
+
       Observer.listenAll();
     } else {
       if (translatedData?.event === 'heartbeat') return;
@@ -66,33 +71,50 @@ export class KrakenService implements KrakenClientService {
 
   public getCurrenciesExchange(pairs: CurrencyPair[]) {
     return new Promise<CurrencySubscribers[]>((resolve) => {
-      const result: CurrencySubscribers[] = [];
-      const unkown_pairs = [];
-
-      for (const pair of pairs) {
-        const current_pair = this.currencyTickerSubscribers[pair];
-        if (current_pair) result.push(current_pair);
-        else unkown_pairs.push(pair);
-      }
-
-      if (unkown_pairs.length === 0) resolve(result);
-      else {
-        const handler_fun = () => {
-          const _unkown_pairs = unkown_pairs.filter((pair) => {
-            const _pair = this.currencyTickerSubscribers[pair];
-            if (_pair) result.push(_pair);
-            else return !_pair;
-          });
-          if (_unkown_pairs.length) return;
-          else {
-            Observer.unsubscribe(handler_fun);
-            resolve(result);
-          }
+      /**
+       * If the server started and haven't connect to Kraken API on time
+       * we will subscribe this function to observer and
+       * as soon as we connected to the API, all this subscribers will be executed
+       * except if has no timeout.
+       */
+      if (!this.socket.connected) {
+        const planned_pairs = async () => {
+          const plannedPairsExhange = await this.getCurrenciesExchange(pairs);
+          resolve(plannedPairsExhange);
+          Observer.unsubscribe(planned_pairs);
         };
 
-        this.subscribeCurrencyTicker(unkown_pairs).then(() =>
-          Observer.subscribe(handler_fun),
-        );
+        Observer.subscribe(planned_pairs);
+      } else {
+        const result: CurrencySubscribers[] = [];
+        const unkown_pairs = [];
+
+        for (const pair of pairs) {
+          const current_pair = this.currencyTickerSubscribers[pair];
+          if (current_pair) result.push(current_pair);
+          else unkown_pairs.push(pair);
+        }
+
+        if (unkown_pairs.length === 0) resolve(result);
+        else {
+          const handler_fun = () => {
+            const _unkown_pairs = unkown_pairs.filter((pair) => {
+              const _pair = this.currencyTickerSubscribers[pair];
+              if (_pair) result.push(_pair);
+              else return !_pair;
+            });
+
+            if (_unkown_pairs.length) return;
+            else {
+              Observer.unsubscribe(handler_fun);
+              resolve(result);
+            }
+          };
+
+          this.subscribeCurrencyTicker(unkown_pairs).then(() =>
+            Observer.subscribe(handler_fun),
+          );
+        }
       }
     });
   }

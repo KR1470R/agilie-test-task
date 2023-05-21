@@ -1,7 +1,7 @@
 import { CurrencyPair } from '../../common/model/app-service.model';
-import { CurrencySubscribers } from '../..//common/model/kraken-service.model';
+import { CurrencySubscribers } from '../../common/model/kraken-service.model';
 
-export default interface KrakenClientService {
+export default interface IKrakenService {
   apiUrl: string;
   aliveTicker: NodeJS.Timer | null;
   connect: () => Promise<void>;

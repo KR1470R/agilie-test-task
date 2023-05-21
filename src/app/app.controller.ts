@@ -5,30 +5,36 @@ import {
   BadRequestException,
   HttpException,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
-import { AppService } from './app.service';
-import { KrakenService } from '../kraken/kraken.service';
-import { GetPricesExchangeDto, PricesResponseExchangeDto } from './dto/app.dto';
+import { KrakenService } from '../kraken-exchanger/kraken.service';
+import { PricesResponseExchangeDto } from './dto/app.dto';
 import SetRequestTimeout from '../common/interceptions/timeout.interception';
+import { REQUEST_TIMEOUT } from '../common/utils/Config';
+import { CurrencyPairsQuery } from './dto/app.dto';
+import { CurrencyPair } from '../common/model/app-service.model';
 
 @Controller()
 export class AppController {
-  constructor(
-    private readonly appService: AppService,
-    private readonly krakenService: KrakenService,
-  ) {}
+  constructor(private readonly krakenService: KrakenService) {}
 
   @Get('prices')
-  @SetRequestTimeout(5000)
+  @SetRequestTimeout(REQUEST_TIMEOUT)
   async getPrices(
-    @Body() req: GetPricesExchangeDto,
+    @Query('pairs') pairs?: CurrencyPairsQuery,
   ): Promise<PricesResponseExchangeDto> {
-    if (typeof req !== 'object' || !req.pairs) throw new BadRequestException();
+    if (!pairs || !pairs.length) throw new BadRequestException();
+    const target_pairs = pairs.split(',') as unknown as CurrencyPair[];
+    target_pairs.forEach((pair: CurrencyPair) => {
+      if (pair.split('/').length !== 2) throw new BadRequestException();
+    });
+
     try {
-      const rates = await this.krakenService.getCurrenciesExchange(req.pairs);
+      const rates = await this.krakenService.getCurrenciesExchange(
+        target_pairs,
+      );
       return { rates };
     } catch (err: unknown) {
-      console.log('SERVER_ERROR:', err);
       throw new HttpException(
         'Server error',
         HttpStatus.INTERNAL_SERVER_ERROR,

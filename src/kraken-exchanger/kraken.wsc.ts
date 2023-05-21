@@ -1,8 +1,8 @@
 import { WebSocket, RawData } from 'ws';
-import KrakenSocketClient from './interfaces/KrakenSocketClient';
+import IKrakenSocket from './interfaces/IKrakenSocket';
 import { KrakenClientRequest } from './dto/kraken-wss.dto';
 
-export default class KrakenWSC implements KrakenSocketClient {
+export default class KrakenWSC implements IKrakenSocket {
   public ws = new WebSocket(this.baseUrl);
 
   private isConnected = false;
@@ -44,5 +44,9 @@ export default class KrakenWSC implements KrakenSocketClient {
         } else resolve();
       });
     });
+  }
+
+  public get connected() {
+    return this.isConnected;
   }
 }

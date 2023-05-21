@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { KrakenService } from '../kraken/kraken.service';
+import { KrakenService } from '../kraken-exchanger/kraken.service';
 
 @Module({
   imports: [],
   controllers: [AppController],
-  providers: [AppService, KrakenService],
+  providers: [KrakenService],
 })
 export class AppModule {}
