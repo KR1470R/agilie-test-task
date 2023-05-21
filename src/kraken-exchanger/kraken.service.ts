@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { translateResponse } from '../common/utils/Util';
 import { CurrencyPair } from 'src/common/model/app-service.model';
-import { CurrencySubscribers } from 'src/common/model/kraken-service.model';
+import {
+  CurrencyInfo,
+  CurrencySubscribers,
+} from 'src/common/model/kraken-service.model';
 import {
   KrakenClientRequest,
   KrakenServerResponseDto,
@@ -70,7 +73,7 @@ export class KrakenService implements IKrakenService {
   }
 
   public getCurrenciesExchange(pairs: CurrencyPair[]) {
-    return new Promise<CurrencySubscribers[]>((resolve) => {
+    return new Promise<CurrencyInfo[]>((resolve) => {
       /**
        * If the server started and haven't connect to Kraken API on time
        * we will subscribe this function to observer and
@@ -86,7 +89,7 @@ export class KrakenService implements IKrakenService {
 
         Observer.subscribe(planned_pairs);
       } else {
-        const result: CurrencySubscribers[] = [];
+        const result: CurrencyInfo[] = [];
         const unkown_pairs = [];
 
         for (const pair of pairs) {

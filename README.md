@@ -32,7 +32,7 @@ account in the reference currency according to the latest exchange rate.
 	 - [x] create appropriate endpoint for currency exchanging.
 	 - [x] add timeout for /prices endpoint.
  - [ ] Implement 2 task.
-	 - [ ] connect PrismaORM PostgreSQL datebase.
-	 - [ ] add all necessary interfaces and entities.
+	 - [x] connect PrismaORM PostgreSQL datebase.
+	 - [x] add all necessary interfaces and entities.
 	 - [ ] implement balance exchanger for every user. 
 
