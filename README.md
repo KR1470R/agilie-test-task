@@ -1,5 +1,3 @@
-
-
 <h1 align="center">Test task for NodeJS Developer at Agilie</h1>
 
 General information
@@ -11,6 +9,14 @@ responses:
  - BTC Bitcoin Cash 
  - BCH Ethereum - ETH
 <hr>
+
+### Content
+1. [Tasks][1]
+2. [Requirements][2]
+3. [TODO][3]
+4. [How to run][4]
+5. [Configuration][5]
+6. [Testing endpoints][6]
 
 ### Tasks
 1. It is necessary to develop an API that will allow you to get the exchange rate of one
@@ -46,7 +52,7 @@ account in the reference currency according to the latest exchange rate.
  - [x] Add instructions how to run.
  - [x] Code Review.
 
-### How to run & use
+### How to run
 
  1. Clone
 `git clone https://github.com/KR1470R/agilie-test-task.git`
@@ -72,3 +78,10 @@ In `/.env` file you can change default server and database parameters.
 | POST| `/delete-accounts` | clear all users in db | `curl -X POST http://localhost:3000/delete-accounts` |200, if success.| 
 
 **All currency rates in all users in the database will be updated every midnight to the last currency rate of Kraken Websockets API.**
+
+[1]:https://github.com/KR1470R/agilie-test-task#tasks
+[2]:https://github.com/KR1470R/agilie-test-task#requirements
+[3]:https://github.com/KR1470R/agilie-test-task#todo
+[4]:https://github.com/KR1470R/agilie-test-task#how-to-run
+[5]:https://github.com/KR1470R/agilie-test-task#configuration
+[6]:https://github.com/KR1470R/agilie-test-task#testing-endpoints
