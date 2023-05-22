@@ -11,6 +11,6 @@ model User {
   id    Int            @id @default(autoincrement())
   pair String
   rate  String
-  balanceCrypto Int
-  balanceFiat Int
+  balanceCrypto Float
+  balanceFiat Float
 }

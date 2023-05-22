@@ -8,6 +8,7 @@ import {
 import {
   KrakenClientRequest,
   KrakenServerResponseDto,
+  KrakenCurrencyErrorDto,
 } from './dto/kraken-wss.dto';
 import IKrakenService from './interfaces/kraken-service.interface';
 import KrakenWSC from './kraken.wsc';
@@ -68,12 +69,15 @@ export class KrakenService implements IKrakenService {
       if (translatedData?.event === 'heartbeat') return;
       if (translatedData.status === 'error') {
         console.log('ERROR:', translatedData);
+        Observer.listenAll(
+          (translatedData as KrakenCurrencyErrorDto).errorMessage,
+        );
       }
     }
   }
 
   public getCurrenciesExchange(pairs: CurrencyPair[]) {
-    return new Promise<CurrencyInfo[]>((resolve) => {
+    return new Promise<CurrencyInfo[]>((resolve, reject) => {
       /**
        * If the server started and haven't connect to Kraken API on time
        * we will subscribe this function to observer and
@@ -100,17 +104,20 @@ export class KrakenService implements IKrakenService {
 
         if (unkown_pairs.length === 0) resolve(result);
         else {
-          const handler_fun = () => {
+          const handler_fun = (errorMessage?: string) => {
             const _unkown_pairs = unkown_pairs.filter((pair) => {
               const _pair = this.currencyTickerSubscribers[pair];
               if (_pair) result.push(_pair);
               else return !_pair;
             });
 
-            if (_unkown_pairs.length) return;
+            if (errorMessage) reject(new Error(errorMessage));
             else {
-              Observer.unsubscribe(handler_fun);
-              resolve(result);
+              if (_unkown_pairs.length) return;
+              else {
+                Observer.unsubscribe(handler_fun);
+                resolve(result);
+              }
             }
           };
 

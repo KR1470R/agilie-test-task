@@ -14,7 +14,7 @@ export default class KrakenWSC implements IKrakenSocket {
 
   constructor(private baseUrl: string) {
     this.ws.on('open', () => {
-      console.log('Connection with socket stabilished.');
+      console.log('Connection with socket established.');
       this.isConnected = true;
       this.onOpen();
     });
